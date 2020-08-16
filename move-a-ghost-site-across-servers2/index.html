@@ -1,0 +1,229 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+<meta name="description" content="" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Move a Ghost Site Across Servers | Fizzy</title>
+<link rel="shortcut icon" href="https://puffer.app/favicon.ico?v=1597579196550">
+<!-- <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous"> -->
+<link rel="stylesheet" href="https://puffer.app/styles/main.css">
+
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+<script src="https://cdn.bootcss.com/moment.js/2.23.0/moment.min.js"></script>
+
+<!-- DEMO JS -->
+<script src="media/scripts/index.js"></script>
+
+
+ 
+  </head>
+  <body>
+    <div class="main">
+      <div class="main-content">
+        <header>
+  <nav id="navbar" class="navbar is-white is-spaced has-shadow-thin is-montserrat is-fixed-top" style="z-index:999;" role="navigation" aria-label="main navigation">
+      <div class="navbar-brand">
+
+        <!-- if wide logo is uploaded -->
+        
+          <div class="navbar-item text-logo">
+              <a class="align-vcentered" href="https://puffer.app" alt="Fizzy" title="Fizzy - The Tasty One">
+                
+                <!-- if icon is uploaded -->
+                
+                  <img src="/media/images/custom-icon.png">
+                
+
+                <!-- Site Name & Colored Dot -->
+                Fizzy<span>.</span>
+
+              </a>
+          </div>
+        
+
+          <!--  burger in mobile devices -->
+          <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarPrimary">
+              <span aria-hidden="true"></span>
+              <span aria-hidden="true"></span>
+              <span aria-hidden="true"></span>
+          </a>
+
+      </div>
+
+      <div id="navbarPrimary" class="navbar-menu">
+
+          <!-- Site Navigation -->
+          <div class="navbar-start">
+            <!--% for (let i=0; i < menus.length; i++) { %-->
+<!--% let menu = menus[i]; %-->
+
+<!-- navigation -->
+
+    
+        <a class="navbar-item" href="/">
+            首页
+        </a>
+    
+  
+    
+        <a class="navbar-item" href="/archives">
+            归档
+        </a>
+    
+  
+    
+        <a class="navbar-item" href="/tags">
+            标签
+        </a>
+    
+  
+    
+        <a class="navbar-item" href="/about">
+            关于
+        </a>
+    
+  
+    
+        <a class="navbar-item" href="https://www.51redaiyu.com" target="_blank">
+        51热带鱼
+        </a>
+    
+  
+
+
+    <div class="navbar-item" id="search-btn">
+        <i class="iconfont icon-search"></i>
+    </div>
+
+    <div class="fizzy-search">
+        <div class="field has-addons" style="display:none" id="search-form">
+            <div class="control has-icons-left">
+                <input id="search-input" class="input" placeholder="Search">
+                <span class="icon is-left">
+                    <i class="iconfont icon-search"></i>
+                </span>
+            </div>
+            <div class="control"  id="close-btn">
+                <button type="submit" class="button"><i class="iconfont icon-cross"></i></button>
+            </div>
+        </div>
+        <div id="search-results"></div>
+    </div>
+ 
+          </div>
+
+
+      </div>
+  </nav>
+</header>
+      
+        <div class="post-detail">
+          <article class="post">
+            <h2 class="post-title">
+              Move a Ghost Site Across Servers
+            </h2>
+            <div class="post-info">
+              <time class="post-time">
+                · 15 August 2020 ·
+              </time>
+              
+                <a href="https://puffer.app/umdOQiXMO8/" class="post-tags">
+                  # SQL
+                </a>
+              
+                <a href="https://puffer.app/PJ0uIT8Me/" class="post-tags">
+                  # Ghost
+                </a>
+              
+                <a href="https://puffer.app/-0lee0XDe/" class="post-tags">
+                  # Gridea
+                </a>
+              
+            </div>
+            
+              <div class="post-feature-image" style="background-image: url('https://i.loli.net/2020/08/15/x1baASiL8cksHwp.png')">
+              </div>
+            
+            <div class="post-content">
+              <p>From time to time you might want to migrate your website to a different server/VPS provider. This tutorial highlights some steps you should be very careful about. Improper operation may result in loss of data or files of the website.</p>
+<!-- more -->
+<h2 id="know-your-ghost-site">Know Your Ghost Site</h2>
+<p>Before we start off the migration, it's better to fully understand the file and data structure of any Ghost website. So you will have an idea of what we are going to do in the following steps.</p>
+<p>When we installed a Ghost website, Ghost provides a handy tool <code>ghost-cli</code>, a command line interface tool. So even if your server contains several Ghost websites, you only need the core files once. For this reason, we don't need to backup or copy the Ghost core files at all time. For a new server we only need to install the ghost-cli again then use the ghost-cli to do the dirty work.</p>
+<p>Beyond the ghost-cli, a Ghost website relies on a database to store all the content and configuration of the site, and a content folder contains all the files and images you uploaded. These 2 things are the main focus of our migration.</p>
+<h2 id="backup-your-database">Backup Your Database</h2>
+<p>Instead of backup the content in the database, we can export the content by using the export tool that is built-in to the admin portal (Labs -&gt; Export your content -&gt; Export). You will get an JSON file contains all data of your website except the files and images.</p>
+<blockquote>
+<p>Regularly backup the content of your website is recommended.</p>
+</blockquote>
+<h2 id="backup-your-files">Backup Your Files</h2>
+<p>Everything you need to copy or download from the server is the content folder under your ghost website folder on the server. However, in most cases, you only need to download the images sub-folder under content. If your server does not provide a file management interface, you can use SSH scp or sFTP to download the folder. Here to mention the command you could use to pack the folder then download it.</p>
+<pre><code class="language-bash">#zip file: zip -r &lt;FileName.zip&gt; &lt;DirPath&gt;
+# -r stands for recursive
+# current direction: your ghost root
+zip -r ./images.zip ./content/images 
+</code></pre>
+<p>This will pack everything insider the folder images and store them into a zip file images.zip, then you can simply download the content.zip from the server.<br>
+Migration</p>
+<blockquote>
+<p>The migration is actually no different than installing a new Ghost website.</p>
+</blockquote>
+<h2 id="install-again">Install Again</h2>
+<p>First, follow this guide (Ghost blog tutorial - Deploy on Server) to install the required environment for Ghost (nginx, nodejs and ghost-cli). Then install a new Ghost as the same meta information as your old website.</p>
+<h2 id="clear-default-database">Clear Default Database</h2>
+<p>After finish, login to the admin dashboard, go to Labs -&gt; &quot;Delete all content -&gt; Delete&quot;. This will remove several dummy posts and a tag autogenerated by Ghost during installation.</p>
+<h2 id="import-json">Import JSON</h2>
+<p>Then import the JSON backup in the same page &quot;Import content -&gt; Import&quot;. It might take few minutes if your JSON file is relatively large. It will show an &quot;Import successful with warnings&quot; notice but with some duplicate configuration. Just ignore it for now.</p>
+<p>##Restore the Files<br>
+Now upload the images.zip file to the new server, under the new website's main folder, you might need the following command to unzip the file:</p>
+<pre><code class="language-bash">sudo rm -r ./content/images # delete the new images folder
+sudo unzip ./images.zip -d ./content/ # unzip to specified directory
+sudo chown -R ghost:ghost /www/ghost/content/images # change the owner to ghost
+sudo chmod -R 755 /www/ghost/content/images # change permission if needed
+</code></pre>
+<p>Make sure the sub-directory and files of content folder inherit its ownership (ghost) and permission (755). chmod calculator: https://chmod-calculator.com/<br>
+Upload Themes</p>
+<p>Download your theme from the older server and upload it to the new site (Settings -&gt; Design).</p>
+<h2 id="final-check">Final Check</h2>
+<p>Now you should check whether the site Settings are same as the old one, if not manually change them.</p>
+<blockquote>
+<p>Notice: the Custom Integration will not automatically restored, so you need to manually restore the integration setting manually and do some change in the code injection if your theme requires certain configuration such as the search that will use the content API.</p>
+</blockquote>
+
+            </div>
+          </article>
+        </div>
+    
+        
+          <div class="next-post">
+            <div class="next">下一篇</div>
+            <a href="https://puffer.app/zhong-wen-biao-ti-title-yang-li-zhan-shi2/">
+              <h3 class="post-title">
+                中文标题 title 样例展示
+              </h3>
+            </a>
+          </div>  
+        
+
+        
+    
+        <footer class="footer is-centered" style="padding-bottom:3rem;">
+  <div class="content has-text-centered">
+      <p class="copyright">&copy; 2020 <a href="https://puffer.app"><strong class="has-text-grey-darker">Fizzy</strong></a></p>
+      <p class="declare has-text-grey">
+      
+      
+          The Voyage Begins at London.
+        
+          <br>Using <a href="https://fizzy.cc/fizzy-theme/" target="_blank" rel="noopener noreferrer"><strong>The Fizzy Theme</strong> v1.3.2 </a> | Powered by <a href="https://github.com/getgridea/gridea" target="_blank" rel="noopener nofollow">Gridea</a>
+      </p>
+  </div>
+</footer>
+
+<script>
+  hljs.initHighlightingOnLoad()
+</script>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://puffer.app</id>
+    <title>Fizzy</title>
+    <updated>2020-08-16T12:01:12.481Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://puffer.app"/>
+    <link rel="self" href="https://puffer.app/atom.xml"/>
+    <subtitle>The Tasty One</subtitle>
+    <logo>https://puffer.app/images/avatar.png</logo>
+    <icon>https://puffer.app/favicon.ico</icon>
+    <rights>All rights reserved 2020, Fizzy</rights>
+    <entry>
+        <title type="html"><![CDATA[The Fizzy Theme for Gridea]]></title>
+        <id>https://puffer.app/the-fizzy-theme-for-gridea/</id>
+        <link href="https://puffer.app/the-fizzy-theme-for-gridea/">
+        </link>
+        <updated>2020-08-15T14:34:18.000Z</updated>
+        <summary type="html"><![CDATA[<p>一个从Ghost移植过来的主题，因为Ghost还是比较偏商业化，现在也没有精力来打理，只想有个地方放网站。然后更新的时候也方便一些，所以选择了Gridea，并且把之前做的主题移植了过来。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>一个从Ghost移植过来的主题，因为Ghost还是比较偏商业化，现在也没有精力来打理，只想有个地方放网站。然后更新的时候也方便一些，所以选择了Gridea，并且把之前做的主题移植了过来。</p>
+<!-- more -->
+<p>--&gt;</p>
+<h2 id="一些约定">一些约定</h2>
+<ul>
+<li>文章的第一个标签为<strong>主标签</strong>，即在首页卡片中展示的标签，可以理解为分。剩余标签会在文章内页展示</li>
+<li>文章支持自定义推荐标签（和Gridea默认的置顶不同），但由于Gridea的<a href="https://github.com/getgridea/gridea/issues/669">BUG</a>，目前统一采用标签名称进行判断，之后可能改用SLUG进行判断。</li>
+<li>由于Gridea暂时不支持文章标签排列（目前最新创建的标签在最前面），上述推荐的标签建议尽早创建并不要再做修改</li>
+<li>文章卡片列表页右上角标优先级：置顶 &gt; 推荐 &gt; 普通；</li>
+</ul>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[HiveSQL Tricks for A Better Life]]></title>
+        <id>https://puffer.app/tricks-for-a-better-life3/</id>
+        <link href="https://puffer.app/tricks-for-a-better-life3/">
+        </link>
+        <updated>2020-08-15T12:43:49.000Z</updated>
+        <summary type="html"><![CDATA[<p>This post is mainly a notebook I use to record some practical HiveSQL tricks during daily work. Hopefully it will also make your life easier.</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>This post is mainly a notebook I use to record some practical HiveSQL tricks during daily work. Hopefully it will also make your life easier.</p>
+<!-- more -->
+<h2 id="concatenate-strings-from-several-rows-by-sql">Concatenate strings from several rows by SQL</h2>
+<p>We use the same logic as we did in Pandas to perform the task.</p>
+<pre><code class="language-SQL">SELECT  t.user_id
+        ,concat_ws(',',collect_set(tag)) AS tags
+        ,concat_ws(',',collect_set(product)) AS products
+FROM    table_name
+GROUP BY user_i
+;
+</code></pre>
+<h2 id="remove-duplicates-in-a-more-efficient-way">Remove duplicates in a more efficient way</h2>
+<p>We use <code>row_number()</code> function to identify the replicated rows and then simply select the rows we need.</p>
+<pre><code class="language-sql">SELECT	user_id
+        ,product_id
+        ,order_time
+FROM (
+        SELECT	user_id
+                ,product_id
+                ,order_time
+                ,row_number() OVER (PARTITION BY user_id, product_id ORDER BY order_time ASC) AS rn
+        FROM    orders
+) t
+WHERE t.rn = 1
+;
+</code></pre>
+<p>First we select all rows like we'd normally do, then we add a new column <code>row_number()</code> with partition by <code>user_id</code> and <code>product_id</code>. This is similar to <code>.groupby(['user_id','product_id'])</code> in pandas. Then the ordering is by order_time ascendingly, meaning the earliest order will be numbered as 1.</p>
+<p>Due to the <code>row_number()</code> cannot in WHERE clause, we need to embed the query to select the rows we need. For dropping duplicates, <code>WHERE t.rn = 1</code> will do the trick. We can also keep the earliest 5 orders for all users:</p>
+<pre><code class="language-sql">SELECT	user_id
+        ,product_id
+        ,order_time
+FROM (
+        SELECT	user_id
+                ,product_id
+                ,order_time
+                ,row_number() OVER (PARTITION BY user_id ORDER BY order_time ASC) AS rn
+        FROM    orders
+) t
+WHERE t.rn &lt;= 5
+;
+</code></pre>
+<blockquote>
+<p>here only partition by user_id, and rn &lt;= 5</p>
+</blockquote>
+<h2 id="fill-string-with-certain-characters-to-a-fixed-length">Fill string with certain characters to a fixed length</h2>
+<p><code>LPAD( string str, int len, string pad )</code> and <code>RPAD( string str, int len, string pad )</code><br>
+For example, <code>lpad('9:00',5,'0')</code> can be used to add a &quot;0&quot;  in front of &quot;9:00&quot;  so it becomes &quot;09:00&quot;, but it won't add 0 to &quot;13:00&quot; since &quot;13:00&quot; has 5 characters.</p>
+<h2 id="get-object-from-json-embedded-rows">Get Object from JSON Embedded Rows</h2>
+<pre><code class="language-sql">SPLIT_PART(get_json_object(sentence,'$.redirect_url'),'-',2,2);
+</code></pre>
+<h2 id="calculate-between-rows">Calculate between Rows</h2>
+<pre><code class="language-sql"># get the previous row's create_time
+LAG(create_time,1) OVER (PARTITION BY user_id ORDER BY create_time)
+
+# calculate the time difference between current row's create_time and previous
+# one, group by user_id
+DATEDIFF(create_time,LAG(create_time,1) OVER (PARTITION BY user_id ORDER BY create_time),'SS' ) AS time_span
+</code></pre>
+<h2 id="calculate-the-timespan-between-every-two-rows">Calculate the timespan between every two rows</h2>
+<p>Similarly, LEAD() is doing the opposite of LAG(), it will get the value of next n row(s).</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Hello Gridea]]></title>
+        <id>https://puffer.app/hello-gridea/</id>
+        <link href="https://puffer.app/hello-gridea/">
+        </link>
+        <updated>2020-08-15T12:36:04.000Z</updated>
+        <summary type="html"><![CDATA[<p>👏  欢迎使用 <strong>Gridea</strong> ！<br>
+✍️  <strong>Gridea</strong> 一个静态博客写作客户端。你可以用它来记录你的生活、心情、知识、笔记、创意... ...</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>👏  欢迎使用 <strong>Gridea</strong> ！<br>
+✍️  <strong>Gridea</strong> 一个静态博客写作客户端。你可以用它来记录你的生活、心情、知识、笔记、创意... ...</p>
+<!-- more -->
+<p><a href="https://github.com/getgridea/gridea">Github</a><br>
+<a href="https://gridea.dev/">Gridea 主页</a><br>
+<a href="http://fehey.com/">示例网站</a></p>
+<h2 id="特性">特性👇</h2>
+<p>📝  你可以使用最酷的 <strong>Markdown</strong> 语法，进行快速创作</p>
+<p>🌉  你可以给文章配上精美的封面图和在文章任意位置插入图片</p>
+<p>🏷️  你可以对文章进行标签分组</p>
+<p>📋  你可以自定义菜单，甚至可以创建外部链接菜单</p>
+<p>💻  你可以在 <strong>Windows</strong>，<strong>MacOS</strong> 或 <strong>Linux</strong> 设备上使用此客户端</p>
+<p>🌎  你可以使用 <strong>𝖦𝗂𝗍𝗁𝗎𝖻 𝖯𝖺𝗀𝖾𝗌</strong> 或 <strong>Coding Pages</strong> 向世界展示，未来将支持更多平台</p>
+<p>💬  你可以进行简单的配置，接入 <a href="https://github.com/gitalk/gitalk">Gitalk</a> 或 <a href="https://github.com/SukkaW/DisqusJS">DisqusJS</a> 评论系统</p>
+<p>🇬🇧  你可以使用<strong>中文简体</strong>或<strong>英语</strong></p>
+<p>🌁  你可以任意使用应用内默认主题或任意第三方主题，强大的主题自定义能力</p>
+<p>🖥  你可以自定义源文件夹，利用 OneDrive、百度网盘、iCloud、Dropbox 等进行多设备同步</p>
+<p>🌱 当然 <strong>Gridea</strong> 还很年轻，有很多不足，但请相信，它会不停向前 🏃</p>
+<p>未来，它一定会成为你离不开的伙伴</p>
+<p>尽情发挥你的才华吧！</p>
+<p>😘 Enjoy~</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Move a Ghost Site Across Servers]]></title>
+        <id>https://puffer.app/move-a-ghost-site-across-servers2/</id>
+        <link href="https://puffer.app/move-a-ghost-site-across-servers2/">
+        </link>
+        <updated>2020-08-15T12:32:31.000Z</updated>
+        <summary type="html"><![CDATA[<p>From time to time you might want to migrate your website to a different server/VPS provider. This tutorial highlights some steps you should be very careful about. Improper operation may result in loss of data or files of the website.</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>From time to time you might want to migrate your website to a different server/VPS provider. This tutorial highlights some steps you should be very careful about. Improper operation may result in loss of data or files of the website.</p>
+<!-- more -->
+<h2 id="know-your-ghost-site">Know Your Ghost Site</h2>
+<p>Before we start off the migration, it's better to fully understand the file and data structure of any Ghost website. So you will have an idea of what we are going to do in the following steps.</p>
+<p>When we installed a Ghost website, Ghost provides a handy tool <code>ghost-cli</code>, a command line interface tool. So even if your server contains several Ghost websites, you only need the core files once. For this reason, we don't need to backup or copy the Ghost core files at all time. For a new server we only need to install the ghost-cli again then use the ghost-cli to do the dirty work.</p>
+<p>Beyond the ghost-cli, a Ghost website relies on a database to store all the content and configuration of the site, and a content folder contains all the files and images you uploaded. These 2 things are the main focus of our migration.</p>
+<h2 id="backup-your-database">Backup Your Database</h2>
+<p>Instead of backup the content in the database, we can export the content by using the export tool that is built-in to the admin portal (Labs -&gt; Export your content -&gt; Export). You will get an JSON file contains all data of your website except the files and images.</p>
+<blockquote>
+<p>Regularly backup the content of your website is recommended.</p>
+</blockquote>
+<h2 id="backup-your-files">Backup Your Files</h2>
+<p>Everything you need to copy or download from the server is the content folder under your ghost website folder on the server. However, in most cases, you only need to download the images sub-folder under content. If your server does not provide a file management interface, you can use SSH scp or sFTP to download the folder. Here to mention the command you could use to pack the folder then download it.</p>
+<pre><code class="language-bash">#zip file: zip -r &lt;FileName.zip&gt; &lt;DirPath&gt;
+# -r stands for recursive
+# current direction: your ghost root
+zip -r ./images.zip ./content/images 
+</code></pre>
+<p>This will pack everything insider the folder images and store them into a zip file images.zip, then you can simply download the content.zip from the server.<br>
+Migration</p>
+<blockquote>
+<p>The migration is actually no different than installing a new Ghost website.</p>
+</blockquote>
+<h2 id="install-again">Install Again</h2>
+<p>First, follow this guide (Ghost blog tutorial - Deploy on Server) to install the required environment for Ghost (nginx, nodejs and ghost-cli). Then install a new Ghost as the same meta information as your old website.</p>
+<h2 id="clear-default-database">Clear Default Database</h2>
+<p>After finish, login to the admin dashboard, go to Labs -&gt; &quot;Delete all content -&gt; Delete&quot;. This will remove several dummy posts and a tag autogenerated by Ghost during installation.</p>
+<h2 id="import-json">Import JSON</h2>
+<p>Then import the JSON backup in the same page &quot;Import content -&gt; Import&quot;. It might take few minutes if your JSON file is relatively large. It will show an &quot;Import successful with warnings&quot; notice but with some duplicate configuration. Just ignore it for now.</p>
+<p>##Restore the Files<br>
+Now upload the images.zip file to the new server, under the new website's main folder, you might need the following command to unzip the file:</p>
+<pre><code class="language-bash">sudo rm -r ./content/images # delete the new images folder
+sudo unzip ./images.zip -d ./content/ # unzip to specified directory
+sudo chown -R ghost:ghost /www/ghost/content/images # change the owner to ghost
+sudo chmod -R 755 /www/ghost/content/images # change permission if needed
+</code></pre>
+<p>Make sure the sub-directory and files of content folder inherit its ownership (ghost) and permission (755). chmod calculator: https://chmod-calculator.com/<br>
+Upload Themes</p>
+<p>Download your theme from the older server and upload it to the new site (Settings -&gt; Design).</p>
+<h2 id="final-check">Final Check</h2>
+<p>Now you should check whether the site Settings are same as the old one, if not manually change them.</p>
+<blockquote>
+<p>Notice: the Custom Integration will not automatically restored, so you need to manually restore the integration setting manually and do some change in the code injection if your theme requires certain configuration such as the search that will use the content API.</p>
+</blockquote>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[中文标题 title 样例展示]]></title>
+        <id>https://puffer.app/zhong-wen-biao-ti-title-yang-li-zhan-shi2/</id>
+        <link href="https://puffer.app/zhong-wen-biao-ti-title-yang-li-zhan-shi2/">
+        </link>
+        <updated>2020-08-15T10:09:26.000Z</updated>
+        <summary type="html"><![CDATA[<p>这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo。</p>
+<!-- more -->
+<h2 id="中文展示-demo">中文展示 demo</h2>
+<p>这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo。</p>
+<p>##中文展示 demo<br>
+这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[中文标题 title 样例展示]]></title>
+        <id>https://puffer.app/zhong-wen-biao-ti-title-yang-li-zhan-shi25/</id>
+        <link href="https://puffer.app/zhong-wen-biao-ti-title-yang-li-zhan-shi25/">
+        </link>
+        <updated>2020-08-15T10:09:26.000Z</updated>
+        <summary type="html"><![CDATA[<p>这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo。</p>
+<!-- more -->
+<h2 id="中文展示-demo">中文展示 demo</h2>
+<p>这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo。</p>
+<p>##中文展示 demo<br>
+这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo，这是一篇中文展示 demo。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[HiveSQL Tricks for A Better Life]]></title>
+        <id>https://puffer.app/hivesql-tricks-for-a-better-life2/</id>
+        <link href="https://puffer.app/hivesql-tricks-for-a-better-life2/">
+        </link>
+        <updated>2020-08-15T10:03:16.000Z</updated>
+        <summary type="html"><![CDATA[<p>This post is mainly a notebook I use to record some practical HiveSQL tricks during daily work. Hopefully it will also make your life easier.</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>This post is mainly a notebook I use to record some practical HiveSQL tricks during daily work. Hopefully it will also make your life easier.</p>
+<!-- more -->
+<h2 id="concatenate-strings-from-several-rows-by-sql">Concatenate strings from several rows by SQL</h2>
+<p>We use the same logic as we did in Pandas to perform the task.</p>
+<pre><code class="language-SQL">SELECT  t.user_id
+        ,concat_ws(',',collect_set(tag)) AS tags
+        ,concat_ws(',',collect_set(product)) AS products
+FROM    table_name
+GROUP BY user_i
+;
+</code></pre>
+<h2 id="remove-duplicates-in-a-more-efficient-way">Remove duplicates in a more efficient way</h2>
+<p>We use <code>row_number()</code> function to identify the replicated rows and then simply select the rows we need.</p>
+<pre><code class="language-sql">SELECT	user_id
+        ,product_id
+        ,order_time
+FROM (
+        SELECT	user_id
+                ,product_id
+                ,order_time
+                ,row_number() OVER (PARTITION BY user_id, product_id ORDER BY order_time ASC) AS rn
+        FROM    orders
+) t
+WHERE t.rn = 1
+;
+</code></pre>
+<p>First we select all rows like we'd normally do, then we add a new column <code>row_number()</code> with partition by <code>user_id</code> and <code>product_id</code>. This is similar to <code>.groupby(['user_id','product_id'])</code> in pandas. Then the ordering is by order_time ascendingly, meaning the earliest order will be numbered as 1.</p>
+<p>Due to the <code>row_number()</code> cannot in WHERE clause, we need to embed the query to select the rows we need. For dropping duplicates, <code>WHERE t.rn = 1</code> will do the trick. We can also keep the earliest 5 orders for all users:</p>
+<pre><code class="language-sql">SELECT	user_id
+        ,product_id
+        ,order_time
+FROM (
+        SELECT	user_id
+                ,product_id
+                ,order_time
+                ,row_number() OVER (PARTITION BY user_id ORDER BY order_time ASC) AS rn
+        FROM    orders
+) t
+WHERE t.rn &lt;= 5
+;
+</code></pre>
+<blockquote>
+<p>here only partition by user_id, and rn &lt;= 5</p>
+</blockquote>
+<h2 id="fill-string-with-certain-characters-to-a-fixed-length">Fill string with certain characters to a fixed length</h2>
+<p><code>LPAD( string str, int len, string pad )</code> and <code>RPAD( string str, int len, string pad )</code><br>
+For example, <code>lpad('9:00',5,'0')</code> can be used to add a &quot;0&quot;  in front of &quot;9:00&quot;  so it becomes &quot;09:00&quot;, but it won't add 0 to &quot;13:00&quot; since &quot;13:00&quot; has 5 characters.</p>
+<h2 id="get-object-from-json-embedded-rows">Get Object from JSON Embedded Rows</h2>
+<pre><code class="language-sql">SPLIT_PART(get_json_object(sentence,'$.redirect_url'),'-',2,2);
+</code></pre>
+<h2 id="calculate-between-rows">Calculate between Rows</h2>
+<pre><code class="language-sql"># get the previous row's create_time
+LAG(create_time,1) OVER (PARTITION BY user_id ORDER BY create_time)
+
+# calculate the time difference between current row's create_time and previous
+# one, group by user_id
+DATEDIFF(create_time,LAG(create_time,1) OVER (PARTITION BY user_id ORDER BY create_time),'SS' ) AS time_span
+</code></pre>
+<h2 id="calculate-the-timespan-between-every-two-rows">Calculate the timespan between every two rows</h2>
+<p>Similarly, LEAD() is doing the opposite of LAG(), it will get the value of next n row(s).</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Move a Ghost Site Across Servers]]></title>
+        <id>https://puffer.app/move-a-ghost-site-across-servers23/</id>
+        <link href="https://puffer.app/move-a-ghost-site-across-servers23/">
+        </link>
+        <updated>2020-08-15T09:26:35.000Z</updated>
+        <summary type="html"><![CDATA[<p>From time to time you might want to migrate your website to a different server/VPS provider. This tutorial highlights some steps you should be very careful about. Improper operation may result in loss of data or files of the website.</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>From time to time you might want to migrate your website to a different server/VPS provider. This tutorial highlights some steps you should be very careful about. Improper operation may result in loss of data or files of the website.</p>
+<!-- more -->
+<h2 id="know-your-ghost-site">Know Your Ghost Site</h2>
+<p>Before we start off the migration, it's better to fully understand the file and data structure of any Ghost website. So you will have an idea of what we are going to do in the following steps.</p>
+<p>When we installed a Ghost website, Ghost provides a handy tool <code>ghost-cli</code>, a command line interface tool. So even if your server contains several Ghost websites, you only need the core files once. For this reason, we don't need to backup or copy the Ghost core files at all time. For a new server we only need to install the ghost-cli again then use the ghost-cli to do the dirty work.</p>
+<p>Beyond the ghost-cli, a Ghost website relies on a database to store all the content and configuration of the site, and a content folder contains all the files and images you uploaded. These 2 things are the main focus of our migration.</p>
+<h2 id="backup-your-database">Backup Your Database</h2>
+<p>Instead of backup the content in the database, we can export the content by using the export tool that is built-in to the admin portal (Labs -&gt; Export your content -&gt; Export). You will get an JSON file contains all data of your website except the files and images.</p>
+<blockquote>
+<p>Regularly backup the content of your website is recommended.</p>
+</blockquote>
+<h2 id="backup-your-files">Backup Your Files</h2>
+<p>Everything you need to copy or download from the server is the content folder under your ghost website folder on the server. However, in most cases, you only need to download the images sub-folder under content. If your server does not provide a file management interface, you can use SSH scp or sFTP to download the folder. Here to mention the command you could use to pack the folder then download it.</p>
+<pre><code class="language-bash">#zip file: zip -r &lt;FileName.zip&gt; &lt;DirPath&gt;
+# -r stands for recursive
+# current direction: your ghost root
+zip -r ./images.zip ./content/images 
+</code></pre>
+<p>This will pack everything insider the folder images and store them into a zip file images.zip, then you can simply download the content.zip from the server.<br>
+Migration</p>
+<blockquote>
+<p>The migration is actually no different than installing a new Ghost website.</p>
+</blockquote>
+<h2 id="install-again">Install Again</h2>
+<p>First, follow this guide (Ghost blog tutorial - Deploy on Server) to install the required environment for Ghost (nginx, nodejs and ghost-cli). Then install a new Ghost as the same meta information as your old website.</p>
+<h2 id="clear-default-database">Clear Default Database</h2>
+<p>After finish, login to the admin dashboard, go to Labs -&gt; &quot;Delete all content -&gt; Delete&quot;. This will remove several dummy posts and a tag autogenerated by Ghost during installation.</p>
+<h2 id="import-json">Import JSON</h2>
+<p>Then import the JSON backup in the same page &quot;Import content -&gt; Import&quot;. It might take few minutes if your JSON file is relatively large. It will show an &quot;Import successful with warnings&quot; notice but with some duplicate configuration. Just ignore it for now.</p>
+<p>##Restore the Files<br>
+Now upload the images.zip file to the new server, under the new website's main folder, you might need the following command to unzip the file:</p>
+<pre><code class="language-bash">sudo rm -r ./content/images # delete the new images folder
+sudo unzip ./images.zip -d ./content/ # unzip to specified directory
+sudo chown -R ghost:ghost /www/ghost/content/images # change the owner to ghost
+sudo chmod -R 755 /www/ghost/content/images # change permission if needed
+</code></pre>
+<p>Make sure the sub-directory and files of content folder inherit its ownership (ghost) and permission (755). chmod calculator: https://chmod-calculator.com/<br>
+Upload Themes</p>
+<p>Download your theme from the older server and upload it to the new site (Settings -&gt; Design).</p>
+<h2 id="final-check">Final Check</h2>
+<p>Now you should check whether the site Settings are same as the old one, if not manually change them.</p>
+<blockquote>
+<p>Notice: the Custom Integration will not automatically restored, so you need to manually restore the integration setting manually and do some change in the code injection if your theme requires certain configuration such as the search that will use the content API.</p>
+</blockquote>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Hello World!]]></title>
+        <id>https://puffer.app/hello-world/</id>
+        <link href="https://puffer.app/hello-world/">
+        </link>
+        <updated>2020-08-14T16:23:45.000Z</updated>
+        <summary type="html"><![CDATA[<p>This is another post.</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>This is another post.</p>
+<!-- more -->
+<p>Haha!</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Move a Ghost Site Across Servers]]></title>
+        <id>https://puffer.app/move-a-ghost-site-across-servers/</id>
+        <link href="https://puffer.app/move-a-ghost-site-across-servers/">
+        </link>
+        <updated>2020-08-04T09:26:35.000Z</updated>
+        <summary type="html"><![CDATA[<p>From time to time you might want to migrate your website to a different server/VPS provider. This tutorial highlights some steps you should be very careful about. Improper operation may result in loss of data or files of the website.</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>From time to time you might want to migrate your website to a different server/VPS provider. This tutorial highlights some steps you should be very careful about. Improper operation may result in loss of data or files of the website.</p>
+<!-- more -->
+<h2 id="know-your-ghost-site">Know Your Ghost Site</h2>
+<p>Before we start off the migration, it's better to fully understand the file and data structure of any Ghost website. So you will have an idea of what we are going to do in the following steps.</p>
+<p>When we installed a Ghost website, Ghost provides a handy tool <code>ghost-cli</code>, a command line interface tool. So even if your server contains several Ghost websites, you only need the core files once. For this reason, we don't need to backup or copy the Ghost core files at all time. For a new server we only need to install the ghost-cli again then use the ghost-cli to do the dirty work.</p>
+<p>Beyond the ghost-cli, a Ghost website relies on a database to store all the content and configuration of the site, and a content folder contains all the files and images you uploaded. These 2 things are the main focus of our migration.</p>
+<h2 id="backup-your-database">Backup Your Database</h2>
+<p>Instead of backup the content in the database, we can export the content by using the export tool that is built-in to the admin portal (Labs -&gt; Export your content -&gt; Export). You will get an JSON file contains all data of your website except the files and images.</p>
+<blockquote>
+<p>Regularly backup the content of your website is recommended.</p>
+</blockquote>
+<h2 id="backup-your-files">Backup Your Files</h2>
+<p>Everything you need to copy or download from the server is the content folder under your ghost website folder on the server. However, in most cases, you only need to download the images sub-folder under content. If your server does not provide a file management interface, you can use SSH scp or sFTP to download the folder. Here to mention the command you could use to pack the folder then download it.</p>
+<pre><code class="language-bash">#zip file: zip -r &lt;FileName.zip&gt; &lt;DirPath&gt;
+# -r stands for recursive
+# current direction: your ghost root
+zip -r ./images.zip ./content/images 
+</code></pre>
+<p>This will pack everything insider the folder images and store them into a zip file images.zip, then you can simply download the content.zip from the server.<br>
+Migration</p>
+<blockquote>
+<p>The migration is actually no different than installing a new Ghost website.</p>
+</blockquote>
+<h2 id="install-again">Install Again</h2>
+<p>First, follow this guide (Ghost blog tutorial - Deploy on Server) to install the required environment for Ghost (nginx, nodejs and ghost-cli). Then install a new Ghost as the same meta information as your old website.</p>
+<h2 id="clear-default-database">Clear Default Database</h2>
+<p>After finish, login to the admin dashboard, go to Labs -&gt; &quot;Delete all content -&gt; Delete&quot;. This will remove several dummy posts and a tag autogenerated by Ghost during installation.</p>
+<h2 id="import-json">Import JSON</h2>
+<p>Then import the JSON backup in the same page &quot;Import content -&gt; Import&quot;. It might take few minutes if your JSON file is relatively large. It will show an &quot;Import successful with warnings&quot; notice but with some duplicate configuration. Just ignore it for now.</p>
+<p>##Restore the Files<br>
+Now upload the images.zip file to the new server, under the new website's main folder, you might need the following command to unzip the file:</p>
+<pre><code class="language-bash">sudo rm -r ./content/images # delete the new images folder
+sudo unzip ./images.zip -d ./content/ # unzip to specified directory
+sudo chown -R ghost:ghost /www/ghost/content/images # change the owner to ghost
+sudo chmod -R 755 /www/ghost/content/images # change permission if needed
+</code></pre>
+<p>Make sure the sub-directory and files of content folder inherit its ownership (ghost) and permission (755). chmod calculator: https://chmod-calculator.com/<br>
+Upload Themes</p>
+<p>Download your theme from the older server and upload it to the new site (Settings -&gt; Design).</p>
+<h2 id="final-check">Final Check</h2>
+<p>Now you should check whether the site Settings are same as the old one, if not manually change them.</p>
+<blockquote>
+<p>Notice: the Custom Integration will not automatically restored, so you need to manually restore the integration setting manually and do some change in the code injection if your theme requires certain configuration such as the search that will use the content API.</p>
+</blockquote>
+]]></content>
+    </entry>
+</feed>
