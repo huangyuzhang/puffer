@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://puffer.app</id>
-    <title>Fizzy</title>
-    <updated>2020-08-16T12:01:12.481Z</updated>
+    <title>Puffer</title>
+    <updated>2020-08-16T12:02:00.915Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://puffer.app"/>
     <link rel="self" href="https://puffer.app/atom.xml"/>
     <subtitle>The Tasty One</subtitle>
     <logo>https://puffer.app/images/avatar.png</logo>
     <icon>https://puffer.app/favicon.ico</icon>
-    <rights>All rights reserved 2020, Fizzy</rights>
+    <rights>All rights reserved 2020, Puffer</rights>
     <entry>
         <title type="html"><![CDATA[The Fizzy Theme for Gridea]]></title>
         <id>https://puffer.app/the-fizzy-theme-for-gridea/</id>
